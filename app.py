@@ -40,8 +40,8 @@ E3k3CwaPwf/A4m+/isvCvwA/bg8DaTf22jxf2HpfxU0u4fR9ZtV3Eie989ZbK8Zmfm/tZbI7f
 2svtllI9pM7W0TQXNo017I3x83kE77m538fxA72+n/163I/Svh/r1SLsfa0OHoSpLm6v8Apf1
 /lb+pDx9e/B7/gMN/srXfiHwI3g/4pafocflJ/blmsmreAtSff5S3MDKt7oN/JtOxfeFZl4S7
 ik+b8/PFv7J/xe/4Jv+LLbxrq82jXmmeKNS/4R8a7c2H2i91fSjC3nafrllD5cV4i/LNb6lb2
-kP2aaKWW0eCbyA3i/7G/7df7Tf7Avxetvjn+yj8XNa+FPiyO0Oly31gsc1tqFmzozW95a3CS
-299a/uUkEM6MhkSOUYljik/d3/AIJwft1f8EZP+C2v7P037OfinX5fBXjC4tft+u/s6and/Y
+kP2aaKWW0eCbyA3i/7G/7df7Tf7Avxetvjn+yj8XNa+FPiyO0Oly31gsc1tqFmzozW35i3C
+S299a/uUkEM6MhkSOUYljik/d3/AIJwft1f8EZP+C2v7P037OfinX5fBXjC4tft+u/s6and/Y
 rGxuVkEj6n4F/f8+iaerfv1isC01s4330M32f7Y+kcUam5pTq4Wrrsfhl4++Evwx+Oenaxr
 PwQudJ0nxB4d0i38RazoWla6upaXJps83lpqthclllutIldkDXLKs1q0qpeQ2mbfzvmI8f/s
 3f0p1ftH/cDf/Bs+vwH+I6fFP4DyeD/Atnr2ptc+DfiTo/mN4B8aagylX0nxDYv5jeGtWddo
@@ -56,8 +56,7 @@ ooyevv9/pT4og2R/np2+p5qwI88fe/z0p3lr2o5TT2REkO3Gevf9c1Iqbcf3sUpAByR0+lKo
 A+UD+dFi1FCqoxkf1/zzS0UUDCiiigAooooEFJv9qd/D+eP/AB6igBf+A0i49vyo/CAe/f5
 etA9Mf/YoAWiiigAooorI5wooooGFFFFIAooooA/nr2N/AOnp+NO2N9/26Y4qaS3K84o8tv
 4PSuE+1sQ7GH3ev+f8/hVi1ubuyuob7S9QvdKvrWVZ4LyylazuraRWDI8csWHRgfQ5o2N9f1
-x+X/AOujY31pC3P1/D+Cdf84E17T/s2/s26NpPwp/b68C/8ADWnhSytfsFr4q0/U/sPjfS7b
-/a/f3Eces26d3uWhuyet23Svhvxn+1F/AE35f2p
+x+X/AOujY31pC3P1/D+Cdf84E17T/s2/s26NpPwp/b68C/8ADWnhSytfsFr4q0/U/sPjfS7b/a/f3Eces26d3uWhuyet23Svhvxn+1F/AE35f2p
 1r911S88D3vhy/sbr/Srf59U0O2+0f9N3l2f9N
 x3/U6l+yh8f2+
 IGp+Ev2f/B2m/tAaVd32
@@ -77,7 +76,7 @@ Jv/ANs/
 2sfgjQf
 /A
 B4t8R/8AnfS5bux+2R2S/
-wDPxHcxv/w2q1
+wDPxHcxv/2q1
 /V
 1165uN9/4H8A33hxf7R
 vf
@@ -208,7 +207,7 @@ I294/f96vP/ABR+zh/wk+/U
 d
 An0vVL353k
 0m/t+P
-+/wDV
++/d
 /wD1u406/X2
 /X/qA
 4+3/Dfh/Tf6e
@@ -369,8 +368,10 @@ def get_analises_cliente(cliente_id):
         df["area_ha"] = area_ha
         df["grid_amostral"] = grid_amostral
 
-        # Extrair Talhão do nome da amostra se houver padrão
-        if "Talhao" not in df.columns:
+        # Extrair ou manter Talhão
+        if "Talhao" not in df.columns and "Talhão" in df.columns:
+            df["Talhao"] = df["Talhão"]
+        elif "Talhao" not in df.columns:
             def extrair_talhao(texto):
                 texto_str = str(texto)
                 parts = texto_str.split("_")
@@ -389,9 +390,9 @@ def get_analises_cliente(cliente_id):
         return pd.concat(lista_dfs, ignore_index=True)
     return pd.DataFrame()
 
-# --- FUNÇÃO DE LIMPEZA E PADRONIZAÇÃO DE DADOS ---
+# --- FUNÇÃO DE LIMPEZA E PADRONIZAÇÃO DE DADOS (BLINDADA) ---
 COLUNAS_PADRAO_NUTRIENTES = [
-    "Identificacao", "Argila (%)", "pH H2O", "P (mg.dm-3)", "P Mehlich-3 (mg.dm-3)", 
+    "Identificacao", "Talhao", "Argila (%)", "pH H2O", "P (mg.dm-3)", "P Mehlich-3 (mg.dm-3)", 
     "K (mg.dm-3)", "M.O. (%)", "Ca (cmolc.dm-3)", "Mg (cmolc.dm-3)", "S (mg.dm-3)", 
     "B (mg.dm-3)", "Cu (mg.dm-3)", "Zn (mg.dm-3)", "Mn (mg.dm-3)", "Fe (mg.dm-3)", 
     "CTC pH 7,0 (cmolc.dm-3)", "Saturacao Bases (%)"
@@ -400,7 +401,7 @@ COLUNAS_PADRAO_NUTRIENTES = [
 def limpar_e_padronizar_df(df, mapa_colunas):
     """
     Renomeia as colunas de acordo com o mapeamento selecionado pelo usuário,
-    substitui vírgulas por pontos em valores numéricos e limpa caracteres inválidos.
+    evita duplicidade de nomes de colunas e limpa caracteres numéricos com segurança.
     """
     df_clean = df.copy()
     
@@ -408,19 +409,37 @@ def limpar_e_padronizar_df(df, mapa_colunas):
     mapa_inverso = {v: k for k, v in mapa_colunas.items() if v != "-- Ignorar --"}
     df_clean = df_clean.rename(columns=mapa_inverso)
 
-    # Tratar colunas numéricas
+    # 1. Resolver colunas duplicadas geradas pelo mapeamento mantendo a primeira ocorrência
+    df_clean = df_clean.loc[:, ~df_clean.columns.duplicated(keep='first')]
+
+    # 2. Tratar colunas numéricas padrão de forma segura
     for col in COLUNAS_PADRAO_NUTRIENTES:
-        if col in df_clean.columns and col != "Identificacao":
-            # Converter para string para tratar vírgula
-            df_clean[col] = df_clean[col].astype(str).str.replace(",", ".")
-            df_clean[col] = df_clean[col].replace(["--", "ND", "None", "nan", "null"], np.nan)
-            df_clean[col] = pd.to_numeric(df_clean[col], errors="coerce")
+        if col in df_clean.columns and col not in ["Identificacao", "Talhao"]:
+            col_data = df_clean[col]
             
+            # Garantir que estamos lidando com uma Series (coluna única)
+            if isinstance(col_data, pd.DataFrame):
+                col_data = col_data.iloc[:, 0]
+                
+            # Limpeza de vírgulas, textos e conversão para float
+            s_str = col_data.astype(str).str.replace(",", ".", regex=False)
+            s_str = s_str.replace(["--", "ND", "None", "nan", "null", "NaN", "N/A"], np.nan)
+            df_clean[col] = pd.to_numeric(s_str, errors="coerce")
+
+    # 3. Tratar Identificacao com segurança
     if "Identificacao" in df_clean.columns:
+        if isinstance(df_clean["Identificacao"], pd.DataFrame):
+            df_clean["Identificacao"] = df_clean["Identificacao"].iloc[:, 0]
         df_clean["Identificacao"] = df_clean["Identificacao"].astype(str).str.strip()
     else:
         df_clean["Identificacao"] = [f"Amostra_{i+1}" for i in range(len(df_clean))]
         
+    # 4. Tratar Talhao se mapeado
+    if "Talhao" in df_clean.columns:
+        if isinstance(df_clean["Talhao"], pd.DataFrame):
+            df_clean["Talhao"] = df_clean["Talhao"].iloc[:, 0]
+        df_clean["Talhao"] = df_clean["Talhao"].astype(str).str.strip()
+
     return df_clean
 
 # --- LÓGICA AGRONÔMICA E CLASSIFICAÇÕES TERRA NATIVA ---
