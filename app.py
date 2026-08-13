@@ -74,8 +74,9 @@ def limpar_e_extrair_talhao(texto):
     # Remove o nome da fazenda se estiver no texto para focar no talhão/pivô
     s = re.sub(r'Fazenda_[A-Za-z0-9_]+?_', '', s, flags=re.IGNORECASE)
     s = re.sub(r'Fazenda\s+[A-Za-z0-9_]+\s*', '', s, flags=re.IGNORECASE)
-    # Substitui underlines por espaços e limpa
+    # Substitui underlines por espaços e padroniza
     s = s.replace('_', ' ').strip()
+    s = re.sub(r'\s+', ' ', s)
     return s if s else "Geral"
 
 def normalizar_profundidade(texto):
@@ -123,8 +124,14 @@ def get_analises_cliente(cliente_id):
         df["area_ha"] = area_ha
         df["grid_amostral"] = grid_amostral
 
-        col_ref = "Descricao" if "Descricao" in df.columns else "Identificacao"
-        if col_ref in df.columns:
+        # Identifica coluna de referência de talhão de forma flexível
+        col_ref = None
+        for col in ["Talhão", "Talhao", "Descricao", "Identificacao"]:
+            if col in df.columns:
+                col_ref = col
+                break
+
+        if col_ref:
             df["Talhao"] = df[col_ref].apply(limpar_e_extrair_talhao)
         else:
             df["Talhao"] = "Geral"
@@ -289,16 +296,17 @@ else:
     st.sidebar.info("Nenhum cliente cadastrado.")
     cliente_id_ativo = None
 
-aba_monit, aba_fert, aba_upload, aba_cli = st.tabs([
-    "📈 Comparativo de Monitoramento", 
+aba_monit, aba_talhoes, aba_fert, aba_upload, aba_cli = st.tabs([
+    "📈 Comparativo Geral", 
+    "🎯 Foco por Talhão / Pivô", 
     "📊 Diagnóstico Fertigrama", 
     "📤 Entrar/Importar Laudo", 
     "👤 Gerenciar Clientes & Laudos"
 ])
 
-# --- ABA 1: COMPARATIVO ---
+# --- ABA 1: COMPARATIVO GERAL ---
 with aba_monit:
-    st.header("📈 Comparação de Fertilidade (Talhão / Monitoramento)")
+    st.header("📈 Comparação de Fertilidade (Geral / Monitoramento)")
     if cliente_id_ativo is None:
         st.info("Cadastre e selecione um cliente.")
     else:
@@ -400,7 +408,98 @@ with aba_monit:
                 )
                 st.plotly_chart(fig_bar, use_container_width=True)
 
-# --- ABA 2: FERTIGRAMA ---
+# --- ABA 2: FOCO POR TALHÃO / PIVÔ (NOVA ABA) ---
+with aba_talhoes:
+    st.header("🎯 Análise Comparativa Detalhada por Talhão / Pivô")
+    if cliente_id_ativo is None:
+        st.info("Selecione um cliente.")
+    else:
+        df_dados = get_analises_cliente(cliente_id_ativo)
+        if df_dados.empty:
+            st.warning("Nenhum dado cadastrado para este cliente.")
+        else:
+            col_t1, col_t2, col_t3 = st.columns(3)
+            with col_t1:
+                faz_t = st.selectbox("Fazenda:", df_dados["Fazenda"].dropna().unique(), key="t_faz")
+            with col_t2:
+                prof_t = st.selectbox("Profundidade:", df_dados[df_dados["Fazenda"] == faz_t]["Profundidade"].dropna().unique(), key="t_prof")
+            with col_t3:
+                df_sub_t_faz = df_dados[(df_dados["Fazenda"] == faz_t) & (df_dados["Profundidade"] == prof_t)]
+                lista_talhoes_unicos = sorted(list(df_sub_t_faz["Talhao"].dropna().unique()))
+                talhao_especifico = st.selectbox("Selecione o Talhão / Pivô Específico:", lista_talhoes_unicos if lista_talhoes_unicos else ["Geral"])
+
+            if talhao_especifico:
+                df_talhao_filtrado = df_sub_t_faz[df_sub_t_faz["Talhao"] == talhao_especifico]
+                
+                # Separa Base e Monitoramento para este talhão
+                df_t_c1 = df_talhao_filtrado[df_talhao_filtrado["Tipo_Coleta"].str.contains("Coleta 1", case=False, na=False)]
+                df_t_c2 = df_talhao_filtrado[df_talhao_filtrado["Tipo_Coleta"].str.contains("Coleta 2|Monitoramento", case=False, na=False)]
+
+                st.markdown(f"### 📍 Pivô / Talhão: `{talhao_especifico}`")
+                st.caption(f"Amostras na Coleta 1 (Base): {len(df_t_c1)} | Amostras no Monitoramento: {len(df_t_c2)}")
+
+                if df_t_c1.empty and df_t_c2.empty:
+                    st.info("Nenhum registro encontrado para este talhão específico.")
+                else:
+                    # Seleção de nutrientes para comparar neste talhão
+                    nutrientes_opt = [
+                        "P (mg.dm-3)", "K (mg.dm-3)", "Mg (cmolc.dm-3)", "Ca (cmolc.dm-3)", "S (mg.dm-3)",
+                        "B (mg.dm-3)", "Cu (mg.dm-3)", "Zn (mg.dm-3)", "Mn (mg.dm-3)", "Fe (mg.dm-3)",
+                        "M.O. (%)", "pH H2O", "Saturacao Bases (%)", "Argila (%)", "CTC pH 7,0 (cmolc.dm-3)"
+                    ]
+                    nutrientes_t_disp = [n for n in nutrientes_opt if n in df_talhao_filtrado.columns]
+                    nutriente_t_sel = st.selectbox("Selecione o Atributo para Comparar no Talhão:", nutrientes_t_disp, key="nut_talhao_foco")
+
+                    if nutriente_t_sel:
+                        val_c1 = df_t_c1[nutriente_t_sel].dropna() if not df_t_c1.empty else pd.Series(dtype=float)
+                        val_c2 = df_t_c2[nutriente_t_sel].dropna() if not df_t_c2.empty else pd.Series(dtype=float)
+
+                        # Métricas lado a lado
+                        col_m1, col_m2, col_m3 = st.columns(3)
+                        m_c1 = val_c1.mean() if not val_c1.empty else 0.0
+                        m_c2 = val_c2.mean() if not val_c2.empty else 0.0
+                        dif_m = m_c2 - m_c1
+                        pct_m = (dif_m / m_c1 * 100) if m_c1 != 0 else 0.0
+
+                        col_m1.metric("Média Coleta 1 (Base)", f"{m_c1:.2f}")
+                        col_m2.metric("Média Monitoramento", f"{m_c2:.2f}")
+                        col_m3.metric("Evolução (Delta)", f"{dif_m:+.2f}", f"{pct_m:+.1f}%")
+
+                        # Boxplot comparativo para o talhão selecionado
+                        fig_box_talhao = go.Figure()
+                        if not val_c1.empty:
+                            fig_box_talhao.add_trace(go.Box(y=val_c1, name="Coleta 1 (Base)", boxpoints='all', marker_color="#337ab7"))
+                        if not val_c2.empty:
+                            fig_box_talhao.add_trace(go.Box(y=val_c2, name="Coleta 2 (Monitoramento)", boxpoints='all', marker_color="#5cb85c"))
+                        
+                        fig_box_talhao.update_layout(
+                            title=f"Distribuição Amostral de {nutriente_t_sel} no Talhão {talhao_especifico}",
+                            yaxis_title=nutriente_t_sel,
+                            template="plotly_dark"
+                        )
+                        st.plotly_chart(fig_box_talhao, use_container_width=True)
+
+                        # Tabela resumida de todos os nutrientes para este talhão específico
+                        st.markdown(f"#### 📋 Tabela Resumo Comparativa - Talhão `{talhao_especifico}`")
+                        resumo_talhao = []
+                        for nut in nutrientes_t_disp:
+                            s1 = df_t_c1[nut].dropna() if not df_t_c1.empty and nut in df_t_c1.columns else pd.Series(dtype=float)
+                            s2 = df_t_c2[nut].dropna() if not df_t_c2.empty and nut in df_t_c2.columns else pd.Series(dtype=float)
+                            
+                            media_s1 = s1.mean() if not s1.empty else np.nan
+                            media_s2 = s2.mean() if not s2.empty else np.nan
+                            delta_nut = media_s2 - media_s1 if not pd.isna(media_s1) and not pd.isna(media_s2) else np.nan
+                            
+                            resumo_talhao.append({
+                                "Nutriente / Atributo": nut,
+                                "Média Base (C1)": round(media_s1, 2) if not pd.isna(media_s1) else "-",
+                                "Média Monitoramento (C2)": round(media_s2, 2) if not pd.isna(media_s2) else "-",
+                                "Variação (Delta)": round(delta_nut, 2) if not pd.isna(delta_nut) else "-"
+                            })
+                        
+                        st.dataframe(pd.DataFrame(resumo_talhao), use_container_width=True)
+
+# --- ABA 3: FERTIGRAMA ---
 with aba_fert:
     st.header("📊 Fertigrama Geral por Laudo")
     if cliente_id_ativo is None:
@@ -459,7 +558,7 @@ with aba_fert:
                 )
                 st.plotly_chart(fig_stack, use_container_width=True)
 
-# --- ABA 3: UPLOAD ---
+# --- ABA 4: UPLOAD ---
 with aba_upload:
     st.header("📤 Importar Laudo Excel do Laboratório")
     if df_clientes.empty:
@@ -493,7 +592,7 @@ with aba_upload:
                 st.success(f"Laudo gravado com sucesso! Total de {len(df_raw)} amostras registradas.")
                 st.rerun()
 
-# --- ABA 4: GERENCIAR CLIENTES E LAUDOS ---
+# --- ABA 5: GERENCIAR CLIENTES E LAUDOS ---
 with aba_cli:
     st.header("👤 Gerenciamento de Clientes & Laudos Cadastrados")
     
