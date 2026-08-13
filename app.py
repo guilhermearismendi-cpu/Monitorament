@@ -1,527 +1,277 @@
 import re
-import sqlite3
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from io import StringIO
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
+# Configuração inicial da página Streamlit
 st.set_page_config(
-    page_title="Terra Nativa - Monitoramento de Solo & Fertigrama",
+    page_title="Sistema Fertigrama & Monitoramento de Solo",
+    page_icon="🌱",
     layout="wide",
-    page_icon="🌾",
-    initial_sidebar_state="expanded"
 )
 
-# --- BANCO DE DADOS (SQLITE) ---
-def init_db():
-    conn = sqlite3.connect("terranativa.db")
-    c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS clientes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL
-        )
-    """)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS analises (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cliente_id INTEGER,
-            fazenda TEXT,
-            profundidade TEXT,
-            tipo_coleta TEXT DEFAULT 'Coleta 1 (Base)',
-            area_ha REAL DEFAULT 0.0,
-            grid_amostral REAL DEFAULT 0.0,
-            dados_json TEXT,
-            FOREIGN KEY (cliente_id) REFERENCES clientes (id) ON DELETE CASCADE
-        )
-    """)
-    conn.commit()
-    conn.close()
 
-init_db()
+# -----------------------------------------------------------------------------
+# FUNÇÃO DE EXTRAÇÃO E LIMPEZA ESTRITA DE TALHÃO / PIVÔ
+# -----------------------------------------------------------------------------
+def extrair_talhao_limpo(texto):
+  """Limpa e padroniza a identificação do talhão/pivô sem misturar pivôs.
 
-def get_clientes():
-    conn = sqlite3.connect("terranativa.db")
-    df = pd.read_sql_query("SELECT id, nome FROM clientes ORDER BY nome", conn)
-    conn.close()
-    return df
+  Exemplos de tratamento:
+  - '1 - Fazenda_Suica_P01a_Pivo_1_Sede - 0-10' -> 'P01a Pivo 1 Sede'
+  - '2 - Fazenda_Suica_P01c_Pivo_1 - 0-10'      -> 'P01c Pivo 1'
+  - '3 - Fazenda_Suica_P01d_Pivo_1_Setorial'   -> 'P01d Pivo 1 Setorial'
+  """
+  if pd.isna(texto):
+    return "Geral"
+  s = str(texto).strip()
 
-def add_cliente(nome):
-    conn = sqlite3.connect("terranativa.db")
-    c = conn.cursor()
-    c.execute("INSERT INTO clientes (nome) VALUES (?)", (nome,))
-    conn.commit()
-    conn.close()
+  # 1. Remove número do ponto/amostra no início (ex: "1 - ", "12 - ")
+  s = re.sub(r"^\d+\s*-\s*", "", s)
 
-def excluir_analise(analise_id):
-    conn = sqlite3.connect("terranativa.db")
-    c = conn.cursor()
-    c.execute("DELETE FROM analises WHERE id = ?", (analise_id,))
-    conn.commit()
-    conn.close()
+  # 2. Remove profundidade no final (ex: "- 0-10 cm", "- 0 - 10", "- 10-20")
+  s = re.sub(r"\s*-\s*\d+.*$", "", s)
 
-def limpar_e_extrair_talhao(texto):
-    if pd.isna(texto):
-        return "Geral"
-    s = str(texto).strip()
-    # Remove prefixo de números do ponto de coleta (ex: "1 - ", "2 - ")
-    s = re.sub(r'^\d+\s*-\s*', '', s)
-    # Remove o sufixo da profundidade (ex: "- 0 - 10cm", "0-10cm")
-    s = re.sub(r'\s*-\s*\d+.*$', '', s)
-    # Remove o nome da fazenda se estiver no texto para focar no talhão/pivô
-    s = re.sub(r'Fazenda_[A-Za-z0-9_]+?_', '', s, flags=re.IGNORECASE)
-    s = re.sub(r'Fazenda\s+[A-Za-z0-9_]+\s*', '', s, flags=re.IGNORECASE)
-    # Substitui underlines por espaços e limpa
-    s = s.replace('_', ' ').strip()
-    return s if s else "Geral"
+  # 3. Remove prefixos da Fazenda
+  s = re.sub(r"Fazenda_[A-Za-z0-9_]+?_", "", s, flags=re.IGNORECASE)
+  s = re.sub(r"Fazenda\s+[A-Za-z0-9_]+\s*", "", s, flags=re.IGNORECASE)
 
-def normalizar_profundidade(texto):
-    if pd.isna(texto):
-        return "0 - 10 cm"
-    s = str(texto).strip().lower()
-    if "0" in s and "10" in s:
-        return "0 - 10 cm"
-    elif "10" in s and "20" in s:
-        return "10 - 20 cm"
-    elif "20" in s and "40" in s:
-        return "20 - 40 cm"
-    return str(texto).strip()
+  # 4. Formata underlines e espaços
+  s = s.replace("_", " ").strip()
+  s = re.sub(r"\s+", " ", s)
 
-def salvar_analise(cliente_id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, df_dados):
-    conn = sqlite3.connect("terranativa.db")
-    c = conn.cursor()
-    prof_norm = normalizar_profundidade(profundidade)
-    json_data = df_dados.to_json(orient="records")
-    c.execute("""
-        INSERT INTO analises (cliente_id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, dados_json)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (cliente_id, fazenda, prof_norm, tipo_coleta, area_ha, grid_amostral, json_data))
-    conn.commit()
-    conn.close()
+  return s if s else "Geral"
 
-def get_analises_cliente(cliente_id):
-    conn = sqlite3.connect("terranativa.db")
-    c = conn.cursor()
-    c.execute("""
-        SELECT id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, dados_json 
-        FROM analises WHERE cliente_id = ?
-    """, (cliente_id,))
-    rows = c.fetchall()
-    conn.close()
-    
-    lista_dfs = []
-    for row in rows:
-        analise_id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, json_str = row
-        df = pd.read_json(StringIO(json_str), orient="records")
-        df["analise_db_id"] = analise_id
-        df["Fazenda"] = fazenda
-        df["Profundidade"] = normalizar_profundidade(profundidade)
-        df["Tipo_Coleta"] = tipo_coleta
-        df["area_ha"] = area_ha
-        df["grid_amostral"] = grid_amostral
 
-        col_ref = "Descricao" if "Descricao" in df.columns else "Identificacao"
-        if col_ref in df.columns:
-            df["Talhao"] = df[col_ref].apply(limpar_e_extrair_talhao)
-        else:
-            df["Talhao"] = "Geral"
-
-        lista_dfs.append(df)
-        
-    if lista_dfs:
-        return pd.concat(lista_dfs, ignore_index=True)
+# -----------------------------------------------------------------------------
+# CARREGAMENTO E PROCESSAMENTO INICIAL DOS DADOS
+# -----------------------------------------------------------------------------
+@st.cache_data
+def carregar_dados(caminho_excel):
+  try:
+    df = pd.read_excel(caminho_excel)
+  except Exception:
     return pd.DataFrame()
 
-# --- CLASSIFICAÇÃO FERTIGRAMA ---
-def classificar_elemento(val, col_name, row=None):
-    if pd.isna(val):
-        return None
-    val = float(val)
-    
-    if col_name == "Argila (%)":
-        if val < 15: return "Ruim (< 20%)"
-        elif val < 20: return "Médio (20 a 40%)"
-        elif val < 25: return "Bom (40 a 60%)"
-        elif val <= 35: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
+  col_ref = (
+      "Descricao"
+      if "Descricao" in df.columns
+      else ("Identificacao" if "Identificacao" in df.columns else None)
+  )
 
-    elif col_name in ["P (mg.dm-3)", "P Mehlich-3 (mg.dm-3)", "P Resina (mg.dm-3)"]:
-        arg = row.get("Argila (%)") if (row is not None and "Argila (%)" in row) else 30
-        meta = 21.0
-        if not pd.isna(arg):
-            arg = float(arg)
-            if arg < 15.0: meta = 42.0
-            elif arg < 20.0: meta = 30.0
-            elif arg < 26.0: meta = 24.0
-            elif arg < 31.0: meta = 21.0
-            elif arg < 40.0: meta = 18.0
-            elif arg < 50.0: meta = 15.0
-            elif arg < 60.0: meta = 12.0
-            else: meta = 8.0
-            
-        if val < 0.5 * meta: return "Ruim (< 20%)"
-        elif val < 0.8 * meta: return "Médio (20 a 40%)"
-        elif val <= 1.2 * meta: return "Bom (40 a 60%)"
-        elif val <= 1.6 * meta: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
+  if col_ref:
+    df["Talhao_Limpo"] = df[col_ref].apply(extrair_talhao_limpo)
+    df["Talhao"] = df["Talhao_Limpo"]
+  else:
+    df["Talhao_Limpo"] = "Geral"
+    df["Talhao"] = "Geral"
 
-    elif col_name in ["K (mg.dm-3)", "K (cmolc.dm-3)"]:
-        if "cmolc" in col_name: val = val * 391.0
-        ctc_val = row.get("CTC pH 7,0 (cmolc.dm-3)") if (row is not None and "CTC pH 7,0 (cmolc.dm-3)" in row) else 10
-        meta_k = 120.0
-        if not pd.isna(ctc_val):
-            ctc_val = float(ctc_val)
-            if ctc_val < 6.0: meta_k = 90.0
-            elif ctc_val < 10.0: meta_k = 120.0
-            elif ctc_val < 13.0: meta_k = 150.0
-            else: meta_k = 180.0
-            
-        if val < 0.5 * meta_k: return "Ruim (< 20%)"
-        elif val < 0.8 * meta_k: return "Médio (20 a 40%)"
-        elif val <= 1.2 * meta_k: return "Bom (40 a 60%)"
-        elif val <= 1.6 * meta_k: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
+  if "Fazenda" not in df.columns:
+    df["Fazenda"] = "Fazenda Suíça"
+  if "Profundidade" not in df.columns:
+    df["Profundidade"] = "0 - 10 cm"
+  if "Tipo_Coleta" not in df.columns:
+    df["Tipo_Coleta"] = "Coleta 2 (Monitoramento)"
 
-    elif col_name == "Mg (cmolc.dm-3)":
-        if val < 0.4: return "Ruim (< 20%)"
-        elif val < 0.8: return "Médio (20 a 40%)"
-        elif val <= 1.2: return "Bom (40 a 60%)"
-        elif val <= 1.8: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
+  return df
 
-    elif col_name == "Ca (cmolc.dm-3)":
-        if val < 1.5: return "Ruim (< 20%)"
-        elif val < 2.5: return "Médio (20 a 40%)"
-        elif val <= 4.0: return "Bom (40 a 60%)"
-        elif val <= 6.0: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
 
-    elif col_name == "S (mg.dm-3)":
-        if val < 5.0: return "Ruim (< 20%)"
-        elif val < 10.0: return "Médio (20 a 40%)"
-        elif val <= 15.0: return "Bom (40 a 60%)"
-        elif val <= 25.0: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
+# -----------------------------------------------------------------------------
+# INTERFACE DO USUÁRIO
+# -----------------------------------------------------------------------------
+st.title("🌱 Sistema Fertigrama & Monitoramento de Fertilidade")
 
-    elif col_name == "B (mg.dm-3)":
-        if val < 0.20: return "Ruim (< 20%)"
-        elif val < 0.40: return "Médio (20 a 40%)"
-        elif val <= 0.60: return "Bom (40 a 60%)"
-        elif val <= 1.00: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
+# Barra Lateral - Upload ou Carregamento da Base
+st.sidebar.header("📁 Fonte de Dados")
+arquivo_uploaded = st.sidebar.file_uploader(
+    "Enviar Planilha Excel (.xlsx)", type=["xlsx", "xls"]
+)
 
-    elif col_name == "Cu (mg.dm-3)":
-        if val < 0.4: return "Ruim (< 20%)"
-        elif val < 0.8: return "Médio (20 a 40%)"
-        elif val <= 1.5: return "Bom (40 a 60%)"
-        elif val <= 3.0: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
-
-    elif col_name == "Mn (mg.dm-3)":
-        if val < 3.0: return "Ruim (< 20%)"
-        elif val < 6.0: return "Médio (20 a 40%)"
-        elif val <= 12.0: return "Bom (40 a 60%)"
-        elif val <= 20.0: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
-
-    elif col_name == "Zn (mg.dm-3)":
-        if val < 1.0: return "Ruim (< 20%)"
-        elif val < 2.0: return "Médio (20 a 40%)"
-        elif val <= 4.0: return "Bom (40 a 60%)"
-        elif val <= 8.0: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
-
-    elif col_name == "Fe (mg.dm-3)":
-        if val < 12.0: return "Ruim (< 20%)"
-        elif val < 24.0: return "Médio (20 a 40%)"
-        elif val <= 45.0: return "Bom (40 a 60%)"
-        elif val <= 80.0: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
-
-    elif col_name == "M.O. (%)":
-        if val < 1.5: return "Ruim (< 20%)"
-        elif val < 2.5: return "Médio (20 a 40%)"
-        elif val <= 3.5: return "Bom (40 a 60%)"
-        elif val <= 5.0: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
-
-    elif col_name == "Saturacao Bases (%)":
-        if val < 40: return "Ruim (< 20%)"
-        elif val < 50: return "Médio (20 a 40%)"
-        elif val < 60: return "Bom (40 a 60%)"
-        elif val < 75: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
-
-    elif col_name == "pH H2O":
-        if val < 5.0: return "Ruim (< 20%)"
-        elif val < 5.5: return "Médio (20 a 40%)"
-        elif val < 6.0: return "Bom (40 a 60%)"
-        elif val < 6.5: return "Muito Bom (60 a 80%)"
-        else: return "Excesso (> 80%)"
-
-    if val < 1.0: return "Ruim (< 20%)"
-    elif val < 3.0: return "Médio (20 a 40%)"
-    elif val < 5.0: return "Bom (40 a 60%)"
-    elif val < 8.0: return "Muito Bom (60 a 80%)"
-    else: return "Excesso (> 80%)"
-
-ORDEM_CLASSES = ["Ruim (< 20%)", "Médio (20 a 40%)", "Bom (40 a 60%)", "Muito Bom (60 a 80%)", "Excesso (> 80%)"]
-CORES_CLASSES = {
-    "Ruim (< 20%)": "#d9534f",
-    "Médio (20 a 40%)": "#f0ad4e",
-    "Bom (40 a 60%)": "#5bc0de",
-    "Muito Bom (60 a 80%)": "#5cb85c",
-    "Excesso (> 80%)": "#0275d8"
-}
-
-# --- INTERFACE ---
-st.title("🌱 Terra Nativa - Monitoramento de Solo & Fertigrama")
-
-df_clientes = get_clientes()
-if not df_clientes.empty:
-    opcoes_clientes = {row['nome']: row['id'] for _, row in df_clientes.iterrows()}
-    cliente_sel_nome = st.sidebar.selectbox("📂 Cliente Ativo:", list(opcoes_clientes.keys()))
-    cliente_id_ativo = opcoes_clientes[cliente_sel_nome]
+if arquivo_uploaded:
+  df_dados = carregar_dados(arquivo_uploaded)
 else:
-    st.sidebar.info("Nenhum cliente cadastrado.")
-    cliente_id_ativo = None
+  try:
+    df_dados = carregar_dados("Monitoramentos Cesar Milho 26.xlsx")
+  except Exception:
+    df_dados = pd.DataFrame()
 
-aba_monit, aba_fert, aba_upload, aba_cli = st.tabs([
-    "📈 Comparativo de Monitoramento", 
-    "📊 Diagnóstico Fertigrama", 
-    "📤 Entrar/Importar Laudo", 
-    "👤 Gerenciar Clientes & Laudos"
-])
+# Navegação Superior
+aba_selecionada = st.radio(
+    "Navegação:",
+    [
+        "📈 Comparativo de Monitoramento",
+        "📊 Diagnóstico Fertigrama",
+        "📥 Entrar/Importar Laudo",
+        "👤 Gerenciar Clientes & Laudos",
+    ],
+    horizontal=True,
+)
 
-# --- ABA 1: COMPARATIVO ---
-with aba_monit:
-    st.header("📈 Comparação de Fertilidade (Talhão / Monitoramento)")
-    if cliente_id_ativo is None:
-        st.info("Cadastre e selecione um cliente.")
+st.markdown("---")
+
+# -----------------------------------------------------------------------------
+# ABA 1: COMPARATIVO DE MONITORAMENTO
+# -----------------------------------------------------------------------------
+if aba_selecionada == "📈 Comparativo de Monitoramento":
+  st.header("📈 Comparação de Fertilidade (Talhão / Monitoramento)")
+
+  if df_dados.empty:
+    st.info(
+        "Nenhum dado carregado. Por favor, envie uma planilha na barra"
+        " lateral."
+    )
+  else:
+    # 1. Filtros de Seleção
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+      fazendas = sorted(list(df_dados["Fazenda"].dropna().unique()))
+      fazenda_sel = st.selectbox(
+          "Fazenda / Gleba:", fazendas if fazendas else ["Fazenda Suíça"]
+      )
+
+    df_sub_faz = (
+        df_dados[df_dados["Fazenda"] == fazenda_sel]
+        if "Fazenda" in df_dados.columns
+        else df_dados
+    )
+
+    with col2:
+      profs = (
+          sorted(list(df_sub_faz["Profundidade"].dropna().unique()))
+          if "Profundidade" in df_sub_faz.columns
+          else ["0 - 10 cm"]
+      )
+      prof_sel = st.selectbox("Profundidade:", profs)
+
+    with col3:
+      # Mantém cada pivô individual (P01a, P01c, P01d) estritamente separado
+      talhoes_disp = sorted(list(df_sub_faz["Talhao_Limpo"].dropna().unique()))
+      opcoes_talhao = ["Todos os Talhões / Pivôs"] + talhoes_disp
+      talhao_sel = st.selectbox("Talhão / Pivô:", opcoes_talhao)
+
+    with col4:
+      cols_excluir = [
+          "Descricao",
+          "Identificacao",
+          "Talhao",
+          "Talhao_Limpo",
+          "Fazenda",
+          "Profundidade",
+          "Tipo_Coleta",
+          "Ponto",
+      ]
+      nutrientes = [
+          c
+          for c in df_sub_faz.columns
+          if c not in cols_excluir
+          and pd.api.types.is_numeric_dtype(df_sub_faz[c])
+      ]
+      nutriente_sel = st.selectbox(
+          "Parâmetro/Nutriente:",
+          nutrientes if nutrientes else ["P (mg.dm-3)"],
+      )
+
+    # 2. Filtragem de Dados com Regra Estrita
+    df_filtrado = df_sub_faz.copy()
+    if "Profundidade" in df_filtrado.columns:
+      df_filtrado = df_filtrado[df_filtrado["Profundidade"] == prof_sel]
+
+    if talhao_sel == "Todos os Talhões / Pivôs":
+      df_c1 = df_filtrado[
+          df_filtrado["Tipo_Coleta"].str.contains(
+              "Coleta 1|Base", case=False, na=False
+          )
+      ].dropna(subset=[nutriente_sel])
+      df_c2 = df_filtrado[
+          df_filtrado["Tipo_Coleta"].str.contains(
+              "Coleta 2|Monitoramento", case=False, na=False
+          )
+      ].dropna(subset=[nutriente_sel])
     else:
-        df_dados = get_analises_cliente(cliente_id_ativo)
-        if df_dados.empty:
-            st.warning("Nenhum laudo encontrado para este cliente.")
-        else:
-            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
-            with col_m1:
-                fazenda_sel = st.selectbox("Fazenda / Gleba:", df_dados["Fazenda"].dropna().unique())
-            with col_m2:
-                profs_disp = df_dados[df_dados["Fazenda"] == fazenda_sel]["Profundidade"].dropna().unique()
-                prof_sel = st.selectbox("Profundidade:", profs_disp)
-            with col_m3:
-                df_sub_faz = df_dados[(df_dados["Fazenda"] == fazenda_sel) & (df_dados["Profundidade"] == prof_sel)]
-                talhoes_disp = ["Todos os Talhões / Pivôs"] + sorted(list(df_sub_faz["Talhao"].dropna().unique()))
-                talhao_sel = st.selectbox("Talhão / Pivô:", talhoes_disp)
-            with col_m4:
-                nutrientes_opt = [
-                    "P (mg.dm-3)", "K (mg.dm-3)", "Mg (cmolc.dm-3)", "Ca (cmolc.dm-3)", "S (mg.dm-3)",
-                    "B (mg.dm-3)", "Cu (mg.dm-3)", "Zn (mg.dm-3)", "Mn (mg.dm-3)", "Fe (mg.dm-3)",
-                    "M.O. (%)", "pH H2O", "Saturacao Bases (%)", "Argila (%)", "CTC pH 7,0 (cmolc.dm-3)"
-                ]
-                nutrientes_existentes = [n for n in nutrientes_opt if n in df_dados.columns]
-                nutriente_sel = st.selectbox("Parâmetro/Nutriente:", nutrientes_existentes if nutrientes_existentes else nutrientes_opt)
+      # Busca o nome EXATO do pivô selecionado para garantir que pivôs diferentes não se misturem
+      df_sub_t = df_filtrado[df_filtrado["Talhao_Limpo"] == talhao_sel]
+      df_c1 = df_sub_t[
+          df_sub_t["Tipo_Coleta"].str.contains(
+              "Coleta 1|Base", case=False, na=False
+          )
+      ].dropna(subset=[nutriente_sel])
+      df_c2 = df_sub_t[
+          df_sub_t["Tipo_Coleta"].str.contains(
+              "Coleta 2|Monitoramento", case=False, na=False
+          )
+      ].dropna(subset=[nutriente_sel])
 
-            df_sub = df_sub_faz.copy()
-            if talhao_sel != "Todos os Talhões / Pivôs":
-                df_sub = df_sub[df_sub["Talhao"] == talhao_sel]
+    # 3. Validação e Apresentação dos Resultados
+    if df_c1.empty or df_c2.empty:
+      st.warning(
+          "⚠️ É necessário ter laudos salvos em 'Coleta 1 (Base)' e 'Coleta 2"
+          " (Monitoramento)' para comparar."
+      )
 
-            df_c1 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 1", case=False, na=False)].dropna(subset=[nutriente_sel])
-            df_c2 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 2|Monitoramento", case=False, na=False)].dropna(subset=[nutriente_sel])
-            
-            if df_c1.empty or df_c2.empty:
-                st.warning("É necessário ter laudos salvos em 'Coleta 1 (Base)' e 'Coleta 2 (Monitoramento)' para comparar.")
-            else:
-                st.markdown("---")
-                st.subheader(f"📊 Resumo Estatístico: {nutriente_sel} ({talhao_sel})")
-                
-                med1, med2 = df_c1[nutriente_sel].mean(), df_c2[nutriente_sel].mean()
-                mediana1, mediana2 = df_c1[nutriente_sel].median(), df_c2[nutriente_sel].median()
-                std1, std2 = df_c1[nutriente_sel].std(), df_c2[nutriente_sel].std()
-                min1, min2 = df_c1[nutriente_sel].min(), df_c2[nutriente_sel].min()
-                max1, max2 = df_c1[nutriente_sel].max(), df_c2[nutriente_sel].max()
-
-                cv1 = (std1 / med1 * 100) if (med1 and not pd.isna(med1) and med1 != 0) else 0.0
-                cv2 = (std2 / med2 * 100) if (med2 and not pd.isna(med2) and med2 != 0) else 0.0
-
-                col_k1, col_k2, col_k3, col_k4 = st.columns(4)
-                with col_k1:
-                    st.info(f"**Coleta 1 (Base)**\n- **Amostras:** {len(df_c1)}\n- **Média:** {med1:.2f}\n- **Mediana:** {mediana1:.2f}\n- **Mín - Máx:** {min1:.2f} a {max1:.2f}\n- **CV (%):** {cv1:.1f}%")
-                with col_k2:
-                    st.success(f"**Coleta 2 (Monitoramento)**\n- **Amostras:** {len(df_c2)}\n- **Média:** {med2:.2f}\n- **Mediana:** {mediana2:.2f}\n- **Mín - Máx:** {min2:.2f} a {max2:.2f}\n- **CV (%):** {cv2:.1f}%")
-                with col_k3:
-                    delta_med = med2 - med1
-                    pct_med = (delta_med / med1 * 100) if med1 != 0 else 0
-                    st.metric("Variação da Média (Delta)", f"{delta_med:+.2f}", delta=f"{pct_med:+.1f}%")
-                    delta_mediana = mediana2 - mediana1
-                    st.metric("Variação da Mediana", f"{delta_mediana:+.2f}")
-                with col_k4:
-                    delta_cv = cv2 - cv1
-                    st.metric("Variação do CV (%)", f"{delta_cv:+.1f}%", delta=f"{delta_cv:+.1f}%", delta_color="inverse")
-                    st.caption("CV menor indica maior uniformidade no talhão.")
-
-                st.markdown("---")
-                st.subheader("📊 Fertigrama Comparativo (% de Distribuição de Área)")
-                
-                df_c1_class = df_c1.apply(lambda r: classificar_elemento(r[nutriente_sel], nutriente_sel, r), axis=1)
-                df_c2_class = df_c2.apply(lambda r: classificar_elemento(r[nutriente_sel], nutriente_sel, r), axis=1)
-
-                dist_c1 = df_c1_class.value_counts(normalize=True) * 100
-                dist_c2 = df_c2_class.value_counts(normalize=True) * 100
-
-                df_dist = pd.DataFrame({
-                    "Classe": ORDEM_CLASSES,
-                    "Coleta 1 (Base) (%)": [dist_c1.get(c, 0.0) for c in ORDEM_CLASSES],
-                    "Coleta 2 (Monitoramento) (%)": [dist_c2.get(c, 0.0) for c in ORDEM_CLASSES]
-                })
-
-                fig_bar = go.Figure()
-                fig_bar.add_trace(go.Bar(
-                    x=df_dist["Classe"], 
-                    y=df_dist["Coleta 1 (Base) (%)"],
-                    name="Coleta 1 (Base)",
-                    marker_color="#337ab7"
-                ))
-                fig_bar.add_trace(go.Bar(
-                    x=df_dist["Classe"], 
-                    y=df_dist["Coleta 2 (Monitoramento) (%)"],
-                    name="Coleta 2 (Monitoramento)",
-                    marker_color="#5cb85c"
-                ))
-                fig_bar.update_layout(
-                    barmode="group",
-                    title=f"Evolução das Classes de Fertilidade - {nutriente_sel} ({talhao_sel})",
-                    xaxis_title="Classe Fertigrama",
-                    yaxis_title="% do Total de Amostras",
-                    legend_title="Momento da Coleta"
-                )
-                st.plotly_chart(fig_bar, use_container_width=True)
-
-# --- ABA 2: FERTIGRAMA ---
-with aba_fert:
-    st.header("📊 Fertigrama Geral por Laudo")
-    if cliente_id_ativo is None:
-        st.info("Selecione um cliente.")
+      with st.expander("ℹ️ Detalhes da Validação de Laudos"):
+        st.write(f"**Talhão/Pivô Selecionado:** `{talhao_sel}`")
+        st.write(f"**Pontos na Coleta 1 (Base):** {len(df_c1)}")
+        st.write(f"**Pontos na Coleta 2 (Monitoramento):** {len(df_c2)}")
+        st.info(
+            f"Para ver o comparativo direto do pivô **'{talhao_sel}'**, garanta"
+            " que o laudo de amostragem na **Coleta 1 (Base)** está cadastrado"
+            " exatamente com esse mesmo nome."
+        )
     else:
-        df_dados = get_analises_cliente(cliente_id_ativo)
-        if df_dados.empty:
-            st.warning("Nenhum dado cadastrado.")
-        else:
-            col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-            with col_f1:
-                faz_f = st.selectbox("Fazenda:", df_dados["Fazenda"].dropna().unique(), key="f_faz")
-            with col_f2:
-                prof_f = st.selectbox("Profundidade:", df_dados[df_dados["Fazenda"] == faz_f]["Profundidade"].dropna().unique(), key="f_prof")
-            with col_f3:
-                df_sub_f = df_dados[(df_dados["Fazenda"] == faz_f) & (df_dados["Profundidade"] == prof_f)]
-                talhoes_f = ["Todos os Talhões / Pivôs"] + sorted(list(df_sub_f["Talhao"].dropna().unique()))
-                talhao_f_sel = st.selectbox("Talhão / Pivô:", talhoes_f, key="f_talhao")
-            with col_f4:
-                tipo_f = st.selectbox("Tipo de Coleta:", df_sub_f["Tipo_Coleta"].dropna().unique(), key="f_tipo")
+        st.success(
+            f"Exibindo comparação para **{talhao_sel}** —"
+            f" **{nutriente_sel}**"
+        )
 
-            df_laudo = df_sub_f[df_sub_f["Tipo_Coleta"] == tipo_f]
-            if talhao_f_sel != "Todos os Talhões / Pivôs":
-                df_laudo = df_laudo[df_laudo["Talhao"] == talhao_f_sel]
-            
-            nutrientes_eval = ["Argila (%)", "pH H2O", "P (mg.dm-3)", "K (mg.dm-3)", "Ca (cmolc.dm-3)", "Mg (cmolc.dm-3)", "S (mg.dm-3)", "B (mg.dm-3)", "Cu (mg.dm-3)", "Zn (mg.dm-3)", "Mn (mg.dm-3)", "Saturacao Bases (%)"]
-            
-            res_fert = []
-            for nut in nutrientes_eval:
-                if nut in df_laudo.columns:
-                    classes = df_laudo.apply(lambda r: classificar_elemento(r[nut], nut, r), axis=1)
-                    counts = classes.value_counts(normalize=True) * 100
-                    row_dict = {"Nutriente": nut}
-                    for c in ORDEM_CLASSES:
-                        row_dict[c] = counts.get(c, 0.0)
-                    res_fert.append(row_dict)
+        m1 = df_c1[nutriente_sel].mean()
+        m2 = df_c2[nutriente_sel].mean()
+        diff = m2 - m1
+        pct = (diff / m1) * 100 if m1 != 0 else 0
 
-            if res_fert:
-                df_chart_fert = pd.DataFrame(res_fert)
-                fig_stack = go.Figure()
-                for c in ORDEM_CLASSES:
-                    if c in df_chart_fert.columns:
-                        fig_stack.add_trace(go.Bar(
-                            y=df_chart_fert["Nutriente"],
-                            x=df_chart_fert[c],
-                            name=c,
-                            orientation='h',
-                            marker_color=CORES_CLASSES.get(c, "#cccccc")
-                        ))
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Média Coleta 1 (Base)", f"{m1:.2f}")
+        col_m2.metric("Média Coleta 2 (Monitoramento)", f"{m2:.2f}")
+        col_m3.metric("Variação Directa", f"{diff:+.2f}", f"{pct:+.1f}%")
 
-                fig_stack.update_layout(
-                    barmode='stack',
-                    title=f"Distribuição de Fertilidade - {faz_f} | {talhao_f_sel} ({tipo_f})",
-                    xaxis_title="Percentual de Amostras (%)",
-                    yaxis_title="Nutriente / Parâmetro"
-                )
-                st.plotly_chart(fig_stack, use_container_width=True)
-
-# --- ABA 3: UPLOAD ---
-with aba_upload:
-    st.header("📤 Importar Laudo Excel do Laboratório")
-    if df_clientes.empty:
-        st.warning("Cadastre um cliente na aba 'Clientes' primeiro.")
-    else:
-        with st.form("form_upload"):
-            up_cliente = st.selectbox("Cliente:", list(opcoes_clientes.keys()))
-            up_fazenda = st.text_input("Nome da Fazenda / Gleba:", value="Fazenda Suíça")
-            up_prof = st.text_input("Profundidade:", value="0 - 10 cm")
-            up_tipo = st.selectbox("Tipo de Coleta:", ["Coleta 1 (Base)", "Coleta 2 (Monitoramento)"])
-            up_area = st.number_input("Área Total (ha):", value=100.0)
-            up_grid = st.number_input("Grid Amostral (ha/ponto):", value=5.0)
-            
-            uploaded_file = st.file_uploader("Arquivo Excel do Laboratório (.xlsx)", type=["xlsx"])
-            btn_salvar = st.form_submit_button("💾 Salvar Laudo no Banco de Dados")
-
-            if btn_salvar and uploaded_file:
-                df_raw = pd.read_excel(uploaded_file).replace("--", np.nan)
-                
-                colunas_num = [
-                    "Argila (%)", "pH H2O", "P (mg.dm-3)", "P Mehlich-3 (mg.dm-3)", "K (mg.dm-3)", 
-                    "M.O. (%)", "Ca (cmolc.dm-3)", "Mg (cmolc.dm-3)", "S (mg.dm-3)", "B (mg.dm-3)", 
-                    "Cu (mg.dm-3)", "Zn (mg.dm-3)", "Mn (mg.dm-3)", "Fe (mg.dm-3)", "CTC pH 7,0 (cmolc.dm-3)", 
-                    "Saturacao Bases (%)"
-                ]
-                for col in colunas_num:
-                    if col in df_raw.columns:
-                        df_raw[col] = pd.to_numeric(df_raw[col], errors="coerce")
-                
-                salvar_analise(opcoes_clientes[up_cliente], up_fazenda, up_prof, up_tipo, up_area, up_grid, df_raw)
-                st.success(f"Laudo gravado com sucesso! Total de {len(df_raw)} amostras registradas.")
-                st.rerun()
-
-# --- ABA 4: GERENCIAR CLIENTES E LAUDOS ---
-with aba_cli:
-    st.header("👤 Gerenciamento de Clientes & Laudos Cadastrados")
-    
-    col_c1, col_c2 = st.columns(2)
-    with col_c1:
-        st.subheader("➕ Novo Cliente")
-        novo_nome = st.text_input("Nome do Cliente:")
-        if st.button("Cadastrar Cliente") and novo_nome.strip():
-            add_cliente(novo_nome.strip())
-            st.success("Cliente adicionado!")
-            st.rerun()
-
-    with col_c2:
-        st.subheader("🗑️ Gerenciar Laudos Gravados")
-        if cliente_id_ativo:
-            conn = sqlite3.connect("terranativa.db")
-            df_analises_db = pd.read_sql_query(
-                "SELECT id, fazenda, profundidade, tipo_coleta FROM analises WHERE cliente_id = ?", 
-                conn, params=(cliente_id_ativo,)
+        # Gráfico Boxplot
+        fig = go.Figure()
+        fig.add_trace(
+            go.Box(
+                y=df_c1[nutriente_sel],
+                name="Coleta 1 (Base)",
+                boxpoints="all",
+                jitter=0.3,
             )
-            conn.close()
-            
-            if df_analises_db.empty:
-                st.info("Nenhum laudo gravado no banco de dados para este cliente.")
-            else:
-                st.dataframe(df_analises_db)
-                analise_para_excluir = st.selectbox("Selecione o ID do laudo para excluir/limpar:", df_analises_db["id"])
-                if st.button("🗑️ Excluir Laudo Selecionado"):
-                    excluir_analise(analise_para_excluir)
-                    st.success(f"Laudo ID {analise_para_excluir} removido!")
-                    st.rerun()
+        )
+        fig.add_trace(
+            go.Box(
+                y=df_c2[nutriente_sel],
+                name="Coleta 2 (Monitoramento)",
+                boxpoints="all",
+                jitter=0.3,
+            )
+        )
+        fig.update_layout(
+            title=f"Distribuição de {nutriente_sel} — {talhao_sel}",
+            yaxis_title=nutriente_sel,
+            template="plotly_dark",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+# -----------------------------------------------------------------------------
+# DEMAIS ABAS
+# -----------------------------------------------------------------------------
+elif aba_selecionada == "📊 Diagnóstico Fertigrama":
+  st.header("📊 Diagnóstico Fertigrama")
+  st.info("Aba de análise de fertilidade e níveis críticos de nutrientes.")
+
+elif aba_selecionada == "📥 Entrar/Importar Laudo":
+  st.header("📥 Importação e Cadastro de Laudos")
+  st.info("Área de entrada e upload de novos laudos.")
+
+elif aba_selecionada == "👤 Gerenciar Clientes & Laudos":
+  st.header("👤 Gerenciar Clientes & Laudos")
+  st.info("Gerenciamento de amostras, edições e alinhamento de nomenclatura.")
