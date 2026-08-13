@@ -47,7 +47,7 @@ PwQudJ0nxB4d0i38RazoWla6upaXJps83lpqthclllutIldkDXLKs1q0qpeQ2mbfzvmI8f/s
 3f0p1ftH/cDf/Bs+vwH+I6fFP4DyeD/Atnr2ptc+DfiTo/mN4B8aagylX0nxDYv5jeGtWddo
 +1bFsLtl+0Wslynm2kX44fEr9nrxV4An1aaz3+I4dB1S60XxG+m2M8mpeCtTtZlgutM13Tgvn
 6ddwykqSyy2x3L5dzMz10/1f+v63PPxWFdN8y2OS8IePvGvw81Jda+HfjTXvA2qwA+VrHhnV
-JdJvh9GuYCrN/wD3/mDXZ/8NYfFrx1jTvjhrPh/4pW5/5iWvWSukeKBn5WZtc04wzzPjnd
+JdJvh9GuYCrN/D3/nmDXZ/8NYfFrx1jTvjhrPh/4pW5/5iWvWSukeKBn5WZtc04wzzPjnd
 fpcA4+7mvI0uLdn+zwyo3y9G4/P3qUq1Inm1I/C2etv4U+Hfi6SOT4aeP00q9k6eHfidPH
 YyytwP3OuQL/AGsp/2ro6en16fSnh1E81xY3mganY6lpl9/ZWp6JqFnf6fdtCsnlywzxz2sz
 Ie/lySADg+3zG/I4Nf4s1rX6l5N5pXijUNOl/v/bbiaBv/Am+qD65Nbc8m2p4K/s5R6I8uoq3
@@ -56,7 +56,7 @@ ooyevv9/pT4og2R/np2+p5qwI88fe/z0p3lr2o5TT2REkO3Gevf9c1Iqbcf3sUpAByR0+lKo
 A+UD+dFi1FCqoxkf1/zzS0UUDCiiigAooooEFJv9qd/D+eP/AB6igBf+A0i49vyo/CAe/f5
 etA9Mf/YoAWiiigAooorI5wooooGFFFFIAooooA/nr2N/AOnp+NO2N9/26Y4qaS3K84o8tv
 4PSuE+1sQ7GH3ev+f8/hVi1ubuyuob7S9QvdKvrWVZ4LyylazuraRWDI8csWHRgfQ5o2N9f1
-x+X/AOujY31pC3P1/D+Cdf8A4E17T/s2/s26NpPwp/b68C/8ADWnhSytfsFr4q0/U/sPjfS7b
+x+X/AOujY31pC3P1/D+Cdf84E17T/s2/s26NpPwp/b68C/8ADWnhSytfsFr4q0/U/sPjfS7b
 /a/f3Eces26d3uWhuyet23Svhvxn+1F/wAEtfgB+3lrHxM1zwd+1j8bPDHjLX9a1+60zw7P
 A3gy71rW3llutbex3RzeILa4vrme8NlItrJvf+8vy/In2dvvf+P/AMX+fy4+tfQngv8AbSsfD
 2gw/DDXfhD8NPHfw2mP+n+ANc8E2kmmxPInzXenyp++0y/8AL/5fI53nk/5eXmX5K3jXq25U
@@ -64,7 +64,7 @@ znqYWnfmstfL/ACa/z+Wp7mP2o/8AglR4h3yQeNv2vPh1fSdVvfgZpd0nmdzJv0/qcd8e/es
 N/gZ+wh8bI0h/Z8/4KnfAe012d9tvp3xz0GfwLdE/I3krdWsefe8rD8Bft2f8EotJmP8Ah
 0n+wl+0TqCfxj4Z/E3TrmA8feA0m4fPv/wAD613fij/gp5/wb31y4ttM0v9m39v39mWW45vH
 8OePdX2e+D/wjGvdD/AOP/E3T/Sj+0MR/O/uX+Zz/UaKd/6f8AmcT4d/4Jh/t06PdX2x8Jbj
-wL8VoHH2n+0fhZ8QNMut/u32C43dffvUOrzfH34V+KrH4ffGXwB4y8D/ALXmzp8euA3endfE
+wL8VoHG2n+0fhZ8QNMut/u32C43dffvUOrzfH34V+KirH4ffGXwB4y8D/stzp8euA3endfE
 Dqp3NYNMu29n28tFH93/AGM5r2DwV/U5/wN9tc3N0/2bf2/f2ZZbjm8fw5491fZ72tzjX+Pa
 v3f96vqTwN8Z/2BP2t/hpH+zp8G/4KoXvxo8G34+1ad8IP2pvDFjq+o6e6ptxZ3/AD6vg/8
 e/31nh/ebvN8y/tTrrfvf9f/ALf2Uu/S3yJ+pUuj3/r+X16/P3p+k2Hxi8c3FjZeG/D+m/En
@@ -79,7 +79,7 @@ lnFeHlX556Hy+fcG4/2PJSfMn/Xf07/Lp/PH4l1y3/eeX5e/z/m/2fl6fe96w/On/vx/3f4/ Wait
 x/K3vX3x4//A4eKfhz9qvLzwNrfjext3fGpeANcg8QQsnT/UeXFc4x/1a9K+M/Hf7K3xw8
 Bw3etav4f
 8eWHh5X/4/vEfw/w30Xf2X/Sntltlz7SfpX6ZgeIMPXjywkfhWO4bzLDztOHf+unp33/H3f8
-24/A/A9as/8ACLf2n83h/ASVfx/58rv/A3rZ3p/wJWYelcYmpf8st34f/AKs+3epYbh/7v/f
+24/A/A9as/8ACLf2n83h/ASVfx/58rv/A3rZ3p/JWYelcYmpf8st34f/AKs+3epYbh/7v/f
 P3a9Dnn0PFtTW915f0jsWbXNDkWz1yyltrv8AueS/0/4H+f3f4e1M8S6pr/9h/D"
 """.replace("\n", "")
 LOGO_URI = f"data:image/jpeg;base64,{RAW_BASE64}"
@@ -176,7 +176,7 @@ def classificar_elemento(val, col_name, row=None):
         else: return "Excesso (> 80%)"
 
     elif col_name == "P (mg.dm-3)":
-        arg = row.get("Argila (%)") if row is not None else 30
+        arg = row.get("Argila (%)") if (row is not None and "Argila (%)" in row) else 30
         meta = 21.0
         if not pd.isna(arg):
             arg = float(arg)
@@ -196,7 +196,7 @@ def classificar_elemento(val, col_name, row=None):
         else: return "Excesso (> 80%)"
 
     elif col_name == "K (mg.dm-3)":
-        ctc_val = row.get("CTC pH 7,0 (cmolc.dm-3)") if row is not None else 10
+        ctc_val = row.get("CTC pH 7,0 (cmolc.dm-3)") if (row is not None and "CTC pH 7,0 (cmolc.dm-3)" in row) else 10
         meta_k = 120.0
         if not pd.isna(ctc_val):
             ctc_val = float(ctc_val)
@@ -239,14 +239,22 @@ def classificar_elemento(val, col_name, row=None):
         elif val < 6.5: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # Padrão genérico caso não entre nas regras específicas
     if val < 1.0: return "Ruim (< 20%)"
     elif val < 3.0: return "Médio (20 a 40%)"
     elif val < 5.0: return "Bom (40 a 60%)"
     elif val < 8.0: return "Muito Bom (60 a 80%)"
     else: return "Excesso (> 80%)"
 
-# --- INTERFACE ---
+ORDEM_CLASSES = ["Ruim (< 20%)", "Médio (20 a 40%)", "Bom (40 a 60%)", "Muito Bom (60 a 80%)", "Excesso (> 80%)"]
+CORES_CLASSES = {
+    "Ruim (< 20%)": "#d9534f",
+    "Médio (20 a 40%)": "#f0ad4e",
+    "Bom (40 a 60%)": "#5bc0de",
+    "Muito Bom (60 a 80%)": "#5cb85c",
+    "Excesso (> 80%)": "#0275d8"
+}
+
+# --- INTERFACE STREAMLIT ---
 st.title("🌱 Terra Nativa - Monitoramento de Solo & Fertigrama")
 
 df_clientes = get_clientes()
@@ -267,7 +275,7 @@ aba_monit, aba_fert, aba_upload, aba_cli = st.tabs([
 
 # --- ABA 1: MONITORAMENTO COMPARATIVO ---
 with aba_monit:
-    st.header("📈 Comparação Temporal (Coleta 1 vs. Coleta 2)")
+    st.header("📈 Comparação de Fertilidade (Talhão / Monitoramento)")
     if cliente_id_ativo is None:
         st.info("Cadastre e selecione um cliente.")
     else:
@@ -277,69 +285,164 @@ with aba_monit:
         else:
             col_m1, col_m2, col_m3 = st.columns(3)
             with col_m1:
-                fazenda_sel = st.selectbox("Fazenda / Gleba:", df_dados["Fazenda"].unique())
+                fazendas_disp = df_dados["Fazenda"].dropna().unique()
+                fazenda_sel = st.selectbox("Fazenda / Gleba:", fazendas_disp)
             with col_m2:
-                prof_sel = st.selectbox("Profundidade:", df_dados["Profundidade"].unique())
+                profs_disp = df_dados[df_dados["Fazenda"] == fazenda_sel]["Profundidade"].dropna().unique()
+                prof_sel = st.selectbox("Profundidade:", profs_disp)
             with col_m3:
-                nutriente_sel = st.selectbox("Parâmetro/Nutriente:", ["P (mg.dm-3)", "K (mg.dm-3)", "Mg (cmolc.dm-3)", "Ca (cmolc.dm-3)", "Saturacao Bases (%)", "pH H2O", "Argila (%)"])
+                nutrientes_opt = ["P (mg.dm-3)", "K (mg.dm-3)", "Mg (cmolc.dm-3)", "Ca (cmolc.dm-3)", "Saturacao Bases (%)", "pH H2O", "Argila (%)", "M.O. (%)"]
+                nutriente_sel = st.selectbox("Parâmetro/Nutriente:", nutrientes_opt)
 
             df_sub = df_dados[(df_dados["Fazenda"] == fazenda_sel) & (df_dados["Profundidade"] == prof_sel)]
             
-            # Separar Coleta 1 e Coleta 2 por 'Identificacao' ou Ponto
-            df_c1 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 1", case=False, na=False)]
-            df_c2 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 2|Monitoramento", case=False, na=False)]
+            df_c1 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 1", case=False, na=False)].dropna(subset=[nutriente_sel])
+            df_c2 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 2|Monitoramento", case=False, na=False)].dropna(subset=[nutriente_sel])
             
             if df_c1.empty or df_c2.empty:
-                st.warning("É necessário ter dados cadastrados para 'Coleta 1 (Base)' e 'Coleta 2 (Monitoramento)' nesta mesma fazenda para gerar a comparação.")
+                st.warning("É necessário ter laudos salvos como 'Coleta 1 (Base)' e 'Coleta 2 (Monitoramento)' nesta fazenda/profundidade.")
             else:
-                # Merge por Identificação/Ponto
-                df_merged = pd.merge(
-                    df_c1[["Identificacao", nutriente_sel]], 
-                    df_c2[["Identificacao", nutriente_sel]], 
-                    on="Identificacao", 
-                    suffixes=("_Coleta1", "_Coleta2")
-                ).dropna()
+                st.markdown("---")
+                st.subheader(f"📊 Resumo Estatístico: {nutriente_sel}")
+                
+                # KPIs Estatísticos do Talhão (Aceita nº diferente de pontos)
+                med1, med2 = df_c1[nutriente_sel].mean(), df_c2[nutriente_sel].mean()
+                mediana1, mediana2 = df_c1[nutriente_sel].median(), df_c2[nutriente_sel].median()
+                std1, std2 = df_c1[nutriente_sel].std(), df_c2[nutriente_sel].std()
+                min1, min2 = df_c1[nutriente_sel].min(), df_c2[nutriente_sel].min()
+                max1, max2 = df_c1[nutriente_sel].max(), df_c2[nutriente_sel].max()
 
-                if df_merged.empty:
-                    st.warning("Não foram encontrados pontos reamostrados com a mesma 'Identificacao' nas duas coletas.")
-                else:
+                col_k1, col_k2, col_k3 = st.columns(3)
+                with col_k1:
+                    st.info(f"**Coleta 1 (Base - Amostragem Completa)**\n- **Amostras:** {len(df_c1)}\n- **Média:** {med1:.2f}\n- **Mediana:** {mediana1:.2f}\n- **Mín - Máx:** {min1:.2f} a {max1:.2f}")
+                with col_k2:
+                    delta_med = med2 - med1
+                    pct_med = (delta_med / med1 * 100) if med1 != 0 else 0
+                    st.success(f"**Coleta 2 (Monitoramento)**\n- **Amostras:** {len(df_c2)}\n- **Média:** {med2:.2f}\n- **Mediana:** {mediana2:.2f}\n- **Mín - Máx:** {min2:.2f} a {max2:.2f}")
+                with col_k3:
+                    st.metric("Variação da Média (Delta)", f"{delta_med:+.2f}", delta=f"{pct_med:+.1f}%")
+                    delta_mediana = mediana2 - mediana1
+                    st.metric("Variação da Mediana", f"{delta_mediana:+.2f}")
+
+                st.markdown("---")
+                st.subheader("📊 Fertigrama Comparativo (% de Distribuição de Área)")
+                
+                # Classificar cada ponto nas faixas da Terra Nativa
+                df_c1_class = df_c1.apply(lambda r: classificar_elemento(r[nutriente_sel], nutriente_sel, r), axis=1)
+                df_c2_class = df_c2.apply(lambda r: classificar_elemento(r[nutriente_sel], nutriente_sel, r), axis=1)
+
+                dist_c1 = df_c1_class.value_counts(normalize=True) * 100
+                dist_c2 = df_c2_class.value_counts(normalize=True) * 100
+
+                df_dist = pd.DataFrame({
+                    "Classe": ORDEM_CLASSES,
+                    "Coleta 1 (Base) (%)": [dist_c1.get(c, 0.0) for c in ORDEM_CLASSES],
+                    "Coleta 2 (Monitoramento) (%)": [dist_c2.get(c, 0.0) for c in ORDEM_CLASSES]
+                })
+
+                fig_bar = go.Figure()
+                fig_bar.add_trace(go.Bar(
+                    x=df_dist["Classe"], 
+                    y=df_dist["Coleta 1 (Base) (%)"],
+                    name="Coleta 1 (Base)",
+                    marker_color="#337ab7"
+                ))
+                fig_bar.add_trace(go.Bar(
+                    x=df_dist["Classe"], 
+                    y=df_dist["Coleta 2 (Monitoramento) (%)"],
+                    name="Coleta 2 (Monitoramento)",
+                    marker_color="#5cb85c"
+                ))
+                fig_bar.update_layout(
+                    barmode="group",
+                    title=f"Evolução das Classes de Fertilidade - {nutriente_sel}",
+                    xaxis_title="Classe Fertigrama",
+                    yaxis_title="% do Total de Amostras",
+                    legend_title="Momento da Coleta"
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+                # Se por acaso houver IDs idênticos (mesma nomenclatura), oferece o gráfico Scatter 1:1
+                ids_comuns = set(df_c1["Identificacao"]).intersection(set(df_c2["Identificacao"]))
+                if len(ids_comuns) > 0:
+                    st.markdown("---")
+                    st.subheader(f"📍 Ponto a Ponto Pareado ({len(ids_comuns)} pontos coincidentes encontrados)")
+                    df_merged = pd.merge(
+                        df_c1[["Identificacao", nutriente_sel]], 
+                        df_c2[["Identificacao", nutriente_sel]], 
+                        on="Identificacao", 
+                        suffixes=("_Coleta1", "_Coleta2")
+                    )
                     df_merged["Delta"] = df_merged[f"{nutriente_sel}_Coleta2"] - df_merged[f"{nutriente_sel}_Coleta1"]
                     
-                    # KPIs
-                    k1, k2, k3 = st.columns(3)
-                    med1 = df_merged[f"{nutriente_sel}_Coleta1"].mean()
-                    med2 = df_merged[f"{nutriente_sel}_Coleta2"].mean()
-                    k1.metric("Média Coleta 1", f"{med1:.2f}")
-                    k2.metric("Média Coleta 2 (Monitoramento)", f"{med2:.2f}", delta=f"{med2 - med1:.2f}")
-                    k3.metric("Pontos Comparados", len(df_merged))
-
-                    # Gráfico 1:1 Scatter
-                    st.subheader(f"Evolução Ponto a Ponto: {nutriente_sel}")
                     max_val = max(df_merged[f"{nutriente_sel}_Coleta1"].max(), df_merged[f"{nutriente_sel}_Coleta2"].max()) * 1.1
-                    
-                    fig = px.scatter(
+                    fig_scat = px.scatter(
                         df_merged, 
                         x=f"{nutriente_sel}_Coleta1", 
                         y=f"{nutriente_sel}_Coleta2",
                         hover_name="Identificacao",
                         color="Delta",
-                        color_continuous_scale="RdYlGn",
-                        labels={f"{nutriente_sel}_Coleta1": "Coleta 1 (Base)", f"{nutriente_sel}_Coleta2": "Coleta 2 (Monitoramento)"}
+                        color_continuous_scale="RdYlGn"
                     )
-                    fig.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="Gray", dash="dash"))
-                    st.plotly_chart(fig, use_container_width=True)
-
-                    st.dataframe(df_merged, use_container_width=True)
+                    fig_scat.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="Gray", dash="dash"))
+                    st.plotly_chart(fig_scat, use_container_width=True)
 
 # --- ABA 2: DIAGNÓSTICO FERTIGRAMA ---
 with aba_fert:
-    st.header("📊 Fertigrama de Qualidade do Solo")
-    if cliente_id_ativo and not df_dados.empty:
-        st.info("Painel de distribuição dos percentuais de fertilidade conforme os teores críticos da Terra Nativa.")
+    st.header("📊 Fertigrama Geral por Laudo")
+    if cliente_id_ativo is None:
+        st.info("Selecione um cliente.")
+    else:
+        df_dados = get_analises_cliente(cliente_id_ativo)
+        if df_dados.empty:
+            st.warning("Nenhum dado cadastrado.")
+        else:
+            col_f1, col_f2, col_f3 = st.columns(3)
+            with col_f1:
+                faz_f = st.selectbox("Fazenda:", df_dados["Fazenda"].dropna().unique(), key="f_faz")
+            with col_f2:
+                prof_f = st.selectbox("Profundidade:", df_dados[df_dados["Fazenda"] == faz_f]["Profundidade"].dropna().unique(), key="f_prof")
+            with col_f3:
+                tipo_f = st.selectbox("Tipo de Coleta:", df_dados[(df_dados["Fazenda"] == faz_f) & (df_dados["Profundidade"] == prof_f)]["Tipo_Coleta"].dropna().unique(), key="f_tipo")
+
+            df_laudo = df_dados[(df_dados["Fazenda"] == faz_f) & (df_dados["Profundidade"] == prof_f) & (df_dados["Tipo_Coleta"] == tipo_f)]
+            
+            nutrientes_eval = ["Argila (%)", "pH H2O", "P (mg.dm-3)", "K (mg.dm-3)", "Ca (cmolc.dm-3)", "Mg (cmolc.dm-3)", "Saturacao Bases (%)"]
+            
+            res_fert = []
+            for nut in nutrientes_eval:
+                if nut in df_laudo.columns:
+                    classes = df_laudo.apply(lambda r: classificar_elemento(r[nut], nut, r), axis=1)
+                    counts = classes.value_counts(normalize=True) * 100
+                    row_dict = {"Nutriente": nut}
+                    for c in ORDEM_CLASSES:
+                        row_dict[c] = counts.get(c, 0.0)
+                    res_fert.append(row_dict)
+
+            df_chart_fert = pd.DataFrame(res_fert)
+            
+            fig_stack = go.Figure()
+            for c in ORDEM_CLASSES:
+                if c in df_chart_fert.columns:
+                    fig_stack.add_trace(go.Bar(
+                        y=df_chart_fert["Nutriente"],
+                        x=df_chart_fert[c],
+                        name=c,
+                        orientation='h',
+                        marker_color=CORES_CLASSES.get(c, "#cccccc")
+                    ))
+
+            fig_stack.update_layout(
+                barmode='stack',
+                title=f"Distribuição de Fertilidade - {faz_f} ({tipo_f})",
+                xaxis_title="Percentual de Amostras (%)",
+                yaxis_title="Nutriente / Parâmetro"
+            )
+            st.plotly_chart(fig_stack, use_container_width=True)
 
 # --- ABA 3: UPLOAD / ENTRADA DE LAUDOS ---
 with aba_upload:
-    st.header("📤 Entrada de Laudos de Análise")
+    st.header("📤 Importar Laudo Excel do Laboratório")
     if df_clientes.empty:
         st.warning("Cadastre um cliente na aba 'Clientes' primeiro.")
     else:
@@ -352,12 +455,12 @@ with aba_upload:
             up_grid = st.number_input("Grid Amostral (ha/ponto):", value=5.0)
             
             uploaded_file = st.file_uploader("Arquivo Excel do Laboratório (.xlsx)", type=["xlsx"])
-            btn_salvar = st.form_submit_button("💾 Salvar Laudo")
+            btn_salvar = st.form_submit_button("💾 Salvar Laudo no Banco de Dados")
 
             if btn_salvar and uploaded_file:
                 df_raw = pd.read_excel(uploaded_file).replace("--", np.nan)
                 
-                # Tratamento de colunas numéricas
+                # Tratamento numérico
                 colunas_num = ["Argila (%)", "pH H2O", "P (mg.dm-3)", "K (mg.dm-3)", "M.O. (%)", "Ca (cmolc.dm-3)", "Mg (cmolc.dm-3)", "CTC pH 7,0 (cmolc.dm-3)", "Saturacao Bases (%)"]
                 for col in colunas_num:
                     if col in df_raw.columns:
