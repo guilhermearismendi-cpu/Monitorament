@@ -1,4 +1,5 @@
 import sqlite3
+import unicodedata
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -54,7 +55,7 @@ Ie/lySADg+3zG/I4Nf4s1rX6l5N5pXijUNOl/v/bbiaBv/Am+qD65Nbc8m2p4K/s5R6I8uoq3
 d6p53Gf/s/8/16VV2N9/0oscdxtFSRR5+/0o8tv4PSoER0VIsTDvUkSfx+vv9/6dveiw1CTI
 ooyevv9/pT4og2R/np2+p5qwI88fe/z0p3lr2o5TT2REkO3Gevf9c1Iqbcf3sUpAByR0+lKo
 A+UD+dFi1FCqoxkf1/zzS0UUDCiiigAooooEFJv9qd/D+eP/AB6igBf+A0i49vyo/CAe/f5
-etA9Mf/YoAWiiigAooorI5wooooGFFFFIAooooA/nr2N/AOnp+NO2N9/26Y4qaS3K84o8tv
+etA9Mf/YoAWiiig AooorI5wooooGFFFFIAooooA/nr2N/AOnp+NO2N9/26Y4qaS3K84o8tv
 4PSuE+1sQ7GH3ev+f8/hVi1ubuyuob7S9QvdKvrWVZ4LyylazuraRWDI8csWHRgfQ5o2N9f1
 x+X/AOujY31pC3P1/D+Cdf84E17T/s2/s26NpPwp/b68C/8ADWnhSytfsFr4q0/U/sPjfS7b/a/f3Eces26d3uWhuyet23Svhvxn+1F/AE35f2p
 1r911S88D3vhy/sbr/Srf59U0O2+0f9N3l2f9N
@@ -208,7 +209,7 @@ d
 An0vVL353k
 0m/t+P
 +/d
-/wD1u406/X2
+/D/1u406/X2
 /X/qA
 4+3/Dfh/Tf6e
 0/Q/5x/
@@ -276,6 +277,25 @@ S3
 """
 LOGO_URI = f"data:image/jpeg;base64,{RAW_BASE64}"
 
+# --- FUNÇÃO AUXILIAR DE HIGIENIZAÇÃO DE TEXTO ---
+def padronizar_texto(texto):
+    """
+    Remove acentos, caracteres especiais, espaços extras e converte para MAIÚSCULAS.
+    Garante que 'Pivô 1', 'pivo 01', 'PIVÔ 1 ' sejam interpretados exatamente igual.
+    """
+    if pd.isna(texto) or texto is None:
+        return "GERAL"
+    texto_str = str(texto).strip().upper()
+    if not texto_str or texto_str in ["NAN", "NONE", "NULL", "N/A", "--"]:
+        return "GERAL"
+    
+    # Remover acentuação
+    nfkd = unicodedata.normalize('NFD', texto_str)
+    texto_sem_acento = "".join([c for c in nfkd if not unicodedata.combining(c)])
+    
+    # Normalizar espaços duplos
+    return " ".join(texto_sem_acento.split())
+
 # --- BANCO DE DADOS (SQLITE) ---
 def init_db():
     conn = sqlite3.connect("terranativa.db")
@@ -314,7 +334,7 @@ def add_cliente(nome):
     conn = sqlite3.connect("terranativa.db")
     c = conn.cursor()
     try:
-        c.execute("INSERT INTO clientes (nome) VALUES (?)", (nome,))
+        c.execute("INSERT INTO clientes (nome) VALUES (?)", (padronizar_texto(nome),))
         conn.commit()
         success = True
     except sqlite3.IntegrityError:
@@ -332,11 +352,16 @@ def delete_cliente(cliente_id):
 def salvar_analise(cliente_id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, df_dados):
     conn = sqlite3.connect("terranativa.db")
     c = conn.cursor()
+    
+    # Higienizar metadados antes de salvar
+    fazenda_padrao = padronizar_texto(fazenda)
+    prof_padrao = padronizar_texto(profundidade)
+    
     json_data = df_dados.to_json(orient="records")
     c.execute("""
         INSERT INTO analises (cliente_id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, dados_json)
         VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (cliente_id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, json_data))
+    """, (cliente_id, fazenda_padrao, prof_padrao, tipo_coleta, area_ha, grid_amostral, json_data))
     conn.commit()
     conn.close()
 
@@ -362,27 +387,27 @@ def get_analises_cliente(cliente_id):
         analise_id, fazenda, profundidade, tipo_coleta, area_ha, grid_amostral, json_str = row
         df = pd.read_json(StringIO(json_str), orient="records")
         df["analise_db_id"] = analise_id
-        df["Fazenda"] = fazenda
-        df["Profundidade"] = profundidade
+        df["Fazenda"] = padronizar_texto(fazenda)
+        df["Profundidade"] = padronizar_texto(profundidade)
         df["Tipo_Coleta"] = tipo_coleta
         df["area_ha"] = area_ha
         df["grid_amostral"] = grid_amostral
 
-        # Extrair ou manter Talhão
-        if "Talhao" not in df.columns and "Talhão" in df.columns:
-            df["Talhao"] = df["Talhão"]
-        elif "Talhao" not in df.columns:
+        # Tratamento rigoroso e padronizado do Talhão
+        if "Talhao" in df.columns:
+            df["Talhao"] = df["Talhao"].apply(padronizar_texto)
+        elif "Talhão" in df.columns:
+            df["Talhao"] = df["Talhão"].apply(padronizar_texto)
+        else:
             def extrair_talhao(texto):
-                texto_str = str(texto)
-                parts = texto_str.split("_")
+                texto_str = str(texto).upper()
+                parts = texto_str.replace("-", "_").replace(" ", "_").split("_")
                 for p in parts:
-                    if p.startswith("T") and p[1:].isdigit():
-                        return f"Talhão {p[1:]}"
-                    elif "Talhao" in p or "Talhão" in p:
-                        return p
-                return "Geral / Não Especificado"
+                    if p.startswith("PIVO") or p.startswith("PIV") or p.startswith("T"):
+                        return padronizar_texto(p)
+                return "GERAL"
 
-            df["Talhao"] = df["Identificacao"].apply(extrair_talhao) if "Identificacao" in df.columns else "Geral"
+            df["Talhao"] = df["Identificacao"].apply(extrair_talhao) if "Identificacao" in df.columns else "GERAL"
 
         lista_dfs.append(df)
         
@@ -399,34 +424,26 @@ COLUNAS_PADRAO_NUTRIENTES = [
 ]
 
 def limpar_e_padronizar_df(df, mapa_colunas):
-    """
-    Renomeia as colunas de acordo com o mapeamento selecionado pelo usuário,
-    evita duplicidade de nomes de colunas e limpa caracteres numéricos com segurança.
-    """
     df_clean = df.copy()
     
     # Inverter dicionário de mapeamento para renomeação
     mapa_inverso = {v: k for k, v in mapa_colunas.items() if v != "-- Ignorar --"}
     df_clean = df_clean.rename(columns=mapa_inverso)
 
-    # 1. Resolver colunas duplicadas geradas pelo mapeamento mantendo a primeira ocorrência
+    # Resolver colunas duplicadas
     df_clean = df_clean.loc[:, ~df_clean.columns.duplicated(keep='first')]
 
-    # 2. Tratar colunas numéricas padrão de forma segura
+    # Tratar colunas numéricas
     for col in COLUNAS_PADRAO_NUTRIENTES:
         if col in df_clean.columns and col not in ["Identificacao", "Talhao"]:
             col_data = df_clean[col]
-            
-            # Garantir que estamos lidando com uma Series (coluna única)
             if isinstance(col_data, pd.DataFrame):
                 col_data = col_data.iloc[:, 0]
-                
-            # Limpeza de vírgulas, textos e conversão para float
             s_str = col_data.astype(str).str.replace(",", ".", regex=False)
             s_str = s_str.replace(["--", "ND", "None", "nan", "null", "NaN", "N/A"], np.nan)
             df_clean[col] = pd.to_numeric(s_str, errors="coerce")
 
-    # 3. Tratar Identificacao com segurança
+    # Identificacao
     if "Identificacao" in df_clean.columns:
         if isinstance(df_clean["Identificacao"], pd.DataFrame):
             df_clean["Identificacao"] = df_clean["Identificacao"].iloc[:, 0]
@@ -434,11 +451,11 @@ def limpar_e_padronizar_df(df, mapa_colunas):
     else:
         df_clean["Identificacao"] = [f"Amostra_{i+1}" for i in range(len(df_clean))]
         
-    # 4. Tratar Talhao se mapeado
+    # Talhão padronizado
     if "Talhao" in df_clean.columns:
         if isinstance(df_clean["Talhao"], pd.DataFrame):
             df_clean["Talhao"] = df_clean["Talhao"].iloc[:, 0]
-        df_clean["Talhao"] = df_clean["Talhao"].astype(str).str.strip()
+        df_clean["Talhao"] = df_clean["Talhao"].apply(padronizar_texto)
 
     return df_clean
 
@@ -448,7 +465,6 @@ def classificar_elemento(val, col_name, row=None):
         return None
     val = float(val)
     
-    # 1. Argila (%)
     if col_name == "Argila (%)":
         if val < 15: return "Ruim (< 20%)"
         elif val < 20: return "Médio (20 a 40%)"
@@ -456,7 +472,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 35: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 2. Fósforo (P)
     elif col_name in ["P (mg.dm-3)", "P Mehlich-3 (mg.dm-3)", "P Resina (mg.dm-3)"]:
         arg = row.get("Argila (%)") if (row is not None and "Argila (%)" in row) else 30
         meta = 21.0
@@ -477,10 +492,9 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 1.6 * meta: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 3. Potássio (K)
     elif col_name in ["K (mg.dm-3)", "K (cmolc.dm-3)"]:
         if "cmolc" in col_name:
-            val = val * 391.0 # converte para mg.dm-3 para classificar
+            val = val * 391.0
         ctc_val = row.get("CTC pH 7,0 (cmolc.dm-3)") if (row is not None and "CTC pH 7,0 (cmolc.dm-3)" in row) else 10
         meta_k = 120.0
         if not pd.isna(ctc_val):
@@ -496,7 +510,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 1.6 * meta_k: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 4. Magnésio (Mg)
     elif col_name == "Mg (cmolc.dm-3)":
         if val < 0.4: return "Ruim (< 20%)"
         elif val < 0.8: return "Médio (20 a 40%)"
@@ -504,7 +517,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 1.8: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 5. Cálcio (Ca)
     elif col_name == "Ca (cmolc.dm-3)":
         if val < 1.5: return "Ruim (< 20%)"
         elif val < 2.5: return "Médio (20 a 40%)"
@@ -512,7 +524,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 6.0: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 6. Enxofre (S)
     elif col_name == "S (mg.dm-3)":
         if val < 5.0: return "Ruim (< 20%)"
         elif val < 10.0: return "Médio (20 a 40%)"
@@ -520,7 +531,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 25.0: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 7. Boro (B)
     elif col_name == "B (mg.dm-3)":
         if val < 0.20: return "Ruim (< 20%)"
         elif val < 0.40: return "Médio (20 a 40%)"
@@ -528,7 +538,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 1.00: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 8. Cobre (Cu)
     elif col_name == "Cu (mg.dm-3)":
         if val < 0.4: return "Ruim (< 20%)"
         elif val < 0.8: return "Médio (20 a 40%)"
@@ -536,7 +545,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 3.0: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 9. Manganês (Mn)
     elif col_name == "Mn (mg.dm-3)":
         if val < 3.0: return "Ruim (< 20%)"
         elif val < 6.0: return "Médio (20 a 40%)"
@@ -544,7 +552,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 20.0: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 10. Zinco (Zn)
     elif col_name == "Zn (mg.dm-3)":
         if val < 1.0: return "Ruim (< 20%)"
         elif val < 2.0: return "Médio (20 a 40%)"
@@ -552,7 +559,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 8.0: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 11. Ferro (Fe)
     elif col_name == "Fe (mg.dm-3)":
         if val < 12.0: return "Ruim (< 20%)"
         elif val < 24.0: return "Médio (20 a 40%)"
@@ -560,7 +566,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 80.0: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 12. Matéria Orgânica (%)
     elif col_name == "M.O. (%)":
         if val < 1.5: return "Ruim (< 20%)"
         elif val < 2.5: return "Médio (20 a 40%)"
@@ -568,7 +573,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val <= 5.0: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 13. Saturação por Bases (%)
     elif col_name == "Saturacao Bases (%)":
         if val < 40: return "Ruim (< 20%)"
         elif val < 50: return "Médio (20 a 40%)"
@@ -576,7 +580,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val < 75: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # 14. pH H2O
     elif col_name == "pH H2O":
         if val < 5.0: return "Ruim (< 20%)"
         elif val < 5.5: return "Médio (20 a 40%)"
@@ -584,7 +587,6 @@ def classificar_elemento(val, col_name, row=None):
         elif val < 6.5: return "Muito Bom (60 a 80%)"
         else: return "Excesso (> 80%)"
 
-    # Padrão para outros parâmetros
     if val < 1.0: return "Ruim (< 20%)"
     elif val < 3.0: return "Médio (20 a 40%)"
     elif val < 5.0: return "Bom (40 a 60%)"
@@ -638,7 +640,7 @@ with aba_monit:
                 prof_sel = st.selectbox("Profundidade:", profs_disp)
             with col_m3:
                 df_sub_faz = df_dados[(df_dados["Fazenda"] == fazenda_sel) & (df_dados["Profundidade"] == prof_sel)]
-                talhoes_disp = ["Todos os Talhões"] + list(df_sub_faz["Talhao"].dropna().unique())
+                talhoes_disp = ["Todos os Talhões"] + sorted(list(df_sub_faz["Talhao"].dropna().unique()))
                 talhao_sel = st.selectbox("Talhão:", talhoes_disp)
             with col_m4:
                 nutrientes_opt = [
@@ -656,8 +658,26 @@ with aba_monit:
             df_c1 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 1", case=False, na=False)].dropna(subset=[nutriente_sel]) if nutriente_sel in df_sub.columns else pd.DataFrame()
             df_c2 = df_sub[df_sub["Tipo_Coleta"].str.contains("Coleta 2|Monitoramento", case=False, na=False)].dropna(subset=[nutriente_sel]) if nutriente_sel in df_sub.columns else pd.DataFrame()
             
+            # --- PAINEL DE DIAGNÓSTICO DE TALHÕES E FILTROS ---
+            with st.expander("🔍 Verificações de Compatibilidade de Talhões (Clique para Diagnóstico)", expanded=False):
+                df_diag_c1 = df_sub_faz[df_sub_faz["Tipo_Coleta"].str.contains("Coleta 1", case=False, na=False)]
+                df_diag_c2 = df_sub_faz[df_sub_faz["Tipo_Coleta"].str.contains("Coleta 2|Monitoramento", case=False, na=False)]
+                
+                t_c1 = set(df_diag_c1["Talhao"].dropna().unique())
+                t_c2 = set(df_diag_c2["Talhao"].dropna().unique())
+                
+                col_d1, col_d2 = st.columns(2)
+                col_d1.write(f"**Talhões na Coleta 1 (Base):** {sorted(list(t_c1)) if t_c1 else 'Nenhum'}")
+                col_d2.write(f"**Talhões na Coleta 2 (Monitoramento):** {sorted(list(t_c2)) if t_c2 else 'Nenhum'}")
+                
+                if talhao_sel != "Todos os Talhões":
+                    if talhao_sel in t_c1 and talhao_sel not in t_c2:
+                        st.error(f"⚠️ O talhão '{talhao_sel}' foi encontrado na Coleta 1, mas NÃO EXISTE na Coleta 2. Verifique se o nome no arquivo 2 foi digitado de forma diferente.")
+                    elif talhao_sel in t_c2 and talhao_sel not in t_c1:
+                        st.error(f"⚠️ O talhão '{talhao_sel}' foi encontrado na Coleta 2, mas NÃO EXISTE na Coleta 1.")
+
             if df_c1.empty or df_c2.empty:
-                st.warning("É necessário ter laudos salvos como 'Coleta 1 (Base)' e 'Coleta 2 (Monitoramento)' nesta combinação de filtros.")
+                st.warning(f"Não há dados suficientes para comparar o talhão '{talhao_sel}'. Certifique-se de que existem laudos de Coleta 1 e Coleta 2 cadastrados para esta combinação.")
             else:
                 st.markdown("---")
                 st.subheader(f"📊 Resumo Estatístico: {nutriente_sel} ({talhao_sel})")
@@ -765,7 +785,7 @@ with aba_fert:
                 prof_f = st.selectbox("Profundidade:", df_dados[df_dados["Fazenda"] == faz_f]["Profundidade"].dropna().unique(), key="f_prof")
             with col_f3:
                 df_sub_f = df_dados[(df_dados["Fazenda"] == faz_f) & (df_dados["Profundidade"] == prof_f)]
-                talhoes_f = ["Todos os Talhões"] + list(df_sub_f["Talhao"].dropna().unique())
+                talhoes_f = ["Todos os Talhões"] + sorted(list(df_sub_f["Talhao"].dropna().unique()))
                 talhao_f_sel = st.selectbox("Talhão:", talhoes_f, key="f_talhao")
             with col_f4:
                 tipo_f = st.selectbox("Tipo de Coleta:", df_sub_f["Tipo_Coleta"].dropna().unique(), key="f_tipo")
@@ -822,7 +842,7 @@ with aba_upload:
             with col_u1:
                 st.subheader("1. Informações do Laudo")
                 up_cliente = st.selectbox("Cliente:", list(opcoes_clientes.keys()), key="up_cli_sel")
-                up_fazenda = st.text_input("Nome da Fazenda / Gleba:", value="Fazenda Santa Maria")
+                up_fazenda = st.text_input("Nome da Fazenda / Gleba:", value="FAZENDA SANTA MARIA")
                 up_prof = st.text_input("Profundidade:", value="0-20")
                 up_tipo = st.selectbox("Tipo de Coleta:", ["Coleta 1 (Base)", "Coleta 2 (Monitoramento)"])
                 up_area = st.number_input("Área Total (ha):", value=100.0, step=10.0)
@@ -843,7 +863,6 @@ with aba_upload:
                     
                     c_m1, c_m2 = st.columns(2)
                     for idx, col_padrao in enumerate(COLUNAS_PADRAO_NUTRIENTES):
-                        # Tenta encontrar correspondência aproximada automática
                         match_idx = 0
                         for i_col, c_ex in enumerate(cols_excel):
                             if col_padrao.split()[0].lower() in c_ex.lower():
